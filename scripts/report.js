@@ -1,5 +1,5 @@
 // scripts/report.js
-
+//
 const routes = (fastify, options, done) => {
   const dbFunctions = require("./database.js");
 
