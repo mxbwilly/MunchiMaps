@@ -27,20 +27,28 @@ const routes = (fastify, options, done) => {
     try {
       const result = await dbFunctions.addReport(building_id, title, description, type);
 
-      // return standardized response
+      // Log the report to console with timestamp
+      const timestamp = new Date().toISOString();
+      fastify.log.info(`[REPORT CREATED] ${timestamp} | ${title} | ${description}`);
+
+      // standardized response
       reply.code(201).send({
         success: true,
-        message: "Report successfully created.",
+        message: "Report successfully created and logged.",
         id: result?.id || null,
+        timestamp: timestamp
       });
     } catch (err) {
-      // handle backend failure gracefully
-      fastify.log.error(err);
+      // Add more detailed logging
+      fastify.log.error("Failed to insert report:", err);
+
       reply.code(500).send({
         success: false,
         error: "Failed to insert new report object.",
+        details: err.message
       });
     }
+
   });
 
   done();
