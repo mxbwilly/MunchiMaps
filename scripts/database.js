@@ -331,10 +331,13 @@ module.exports = {
   
   addReport: async (building_id, title, description) => {
     try{
-      db.run("INSERT INTO building (building_id, title, description) VALUES (?, ?, ?)", [building_id, title, description]);
+      await db.run(
+        "INSERT INTO building (building_id, title, description, type) VALUES (?, ?, ?, ?)",
+        [building_id, title, description, type]
+      );
     }
     catch(dbError) {
-      console.catch(dbError);
+      console.error("Database Error:", dbError);
     }
   },
   
