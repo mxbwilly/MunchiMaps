@@ -51,6 +51,24 @@ const routes = (fastify, options, done) => {
 
   });
 
+  // route for retrieving all reports //
+  fastify.get("/reports", async (request, reply) => {
+    try {
+      const reports = await dbFunctions.getAllReports();
+      reply.code(200).send({
+        success: true,
+        count: reports.length,
+        data: reports,
+      });
+    } catch (err) {
+      fastify.log.error(err);
+      reply.code(500).send({
+        success: false,
+        error: "Failed to retrieve reports from the database.",
+      });
+    }
+  });
+
   done();
 };
 
