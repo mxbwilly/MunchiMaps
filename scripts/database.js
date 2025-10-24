@@ -340,7 +340,21 @@ module.exports = {
       console.error("Database Error:", dbError);
     }
   },
-  
+
+  // Fetch all reports from the database
+  getAllReports: async () => {
+    return new Promise((resolve, reject) => {
+      db.all("SELECT * FROM building", [], (err, rows) => {
+        if (err) {
+          console.error("Error fetching reports:", err);
+          reject(err);
+        } else {
+          resolve(rows);
+        }
+      });
+    });
+  },
+
   insertBuilding: async (name, x_coord, y_coord, time_opens, time_closes, num_snack_machines, num_drink_machines, num_ratings, average_ratings, needs_service) => {
     try{
       await db.run('INSERT INTO building (name, x_coord, y_coord, time_opens, time_closes, num_snack_machines, num_drink_machines, num_ratings, sum_ratings, average_ratings, needs_service) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
