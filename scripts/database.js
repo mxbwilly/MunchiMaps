@@ -354,6 +354,22 @@ module.exports = {
       });
     });
   },
+  
+  getReportStats: async () => {
+    try {
+      const rows = await db.all("SELECT type, COUNT(*) AS count FROM building GROUP BY type");
+      const byType = {};
+      let total = 0;
+      rows.forEach(row => {
+        byType[row.type] = row.count;
+        total += row.count;
+      });
+      return { total, byType };
+    } catch (err) {
+      console.error("Database Error (getReportStats):", err);
+      throw err;
+    }
+  },
 
   insertBuilding: async (name, x_coord, y_coord, time_opens, time_closes, num_snack_machines, num_drink_machines, num_ratings, average_ratings, needs_service) => {
     try{
