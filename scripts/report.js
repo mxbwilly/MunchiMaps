@@ -72,4 +72,22 @@ const routes = (fastify, options, done) => {
   done();
 };
 
+  // route for retrieving report statistics //
+  fastify.get("/reports/stats", async (request, reply) => {
+    try {
+      const stats = await dbFunctions.getReportStats();
+      reply.code(200).send({
+        success: true,
+        total_reports: stats.total,
+        by_type: stats.byType
+      });
+    } catch (err) {
+      fastify.log.error(err);
+      reply.code(500).send({
+        success: false,
+        error: "Failed to retrieve report statistics."
+      });
+    }
+  });
+
 module.exports = routes;
