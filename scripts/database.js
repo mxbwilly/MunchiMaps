@@ -420,5 +420,16 @@ module.exports = {
     }
   },
 
+  getReportsByBuilding: async (building_id) => {
+  try {
+    return await db.all(
+      "SELECT * FROM building WHERE building_id = ?",
+      [building_id]
+    );
+  } catch (dbError) {
+    console.error("Database Error:", dbError);
+    throw dbError;
+  }
+},
   
 };
