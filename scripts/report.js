@@ -51,7 +51,7 @@ const routes = (fastify, options, done) => {
 
   });
 
-  // route for retrieving all reports //
+  // route for retrieving all reports
   fastify.get("/reports", async (request, reply) => {
     try {
       const reports = await dbFunctions.getAllReports();
@@ -69,10 +69,32 @@ const routes = (fastify, options, done) => {
     }
   });
 
+  // route for retrieving reports for a specific building
+  fastify.get("/reports/building/:building_id", async (request, reply) => {
+    const { building_id } = request.params;
+
+    try {
+      const reports = await dbFunctions.getReportsByBuilding(building_id);
+
+      reply.code(200).send({
+        success: true,
+        building_id: building_id,
+        count: reports.length,
+        data: reports
+      });
+    } catch (err) {
+      fastify.log.error(err);
+      reply.code(500).send({
+        success: false,
+        error: "Failed to retrieve reports for this building."
+      });
+    }
+  });
+
   done();
 };
 
-  // route for retrieving report statistics //
+  // route for retrieving report statistics
   fastify.get("/reports/stats", async (request, reply) => {
     try {
       const stats = await dbFunctions.getReportStats();
