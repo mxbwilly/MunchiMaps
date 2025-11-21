@@ -316,6 +316,23 @@ function getNumDrinkMachines(name, callback){
   });
 };
 
+// return all reports that match a specific type
+async function getReportsByType(type) {
+  const db = await connect();
+
+  try {
+    const query = `
+      SELECT id, building_id, title, description, type, created_at
+      FROM reports
+      WHERE type = ?
+    `;
+    const rows = await db.all(query, [type]);
+    return rows;
+  } catch (err) {
+    console.error("Database error in getReportsByType:", err);
+    throw err;
+  }
+}
 
 module.exports = {
   initializeDatabase,
