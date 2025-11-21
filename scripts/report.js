@@ -91,6 +91,36 @@ const routes = (fastify, options, done) => {
     }
   });
 
+  // route for retrieving reports filtered by type
+  fastify.get("/reports/type/:type", async (request, reply) => {
+    const { type } = request.params;
+
+    const validTypes = ["vending_machine", "location", "app_functionality", "other"];
+    if (!validTypes.includes(type)) {
+      return reply.code(400).send({
+        success: false,
+        error: `Invalid report type. Valid types: ${validTypes.join(", ")}`
+      });
+    }
+
+    try {
+      const reports = await dbFunctions.getReportsByType(type);
+
+      reply.code(200).send({
+        success: true,
+        count: reports.length,
+        type: type,
+        data: reports
+      });
+    } catch (err) {
+      fastify.log.error(err);
+      reply.code(500).send({
+        success: false,
+        error: "Failed to retrieve filtered reports from the database."
+      });
+    }
+  });
+
   done();
 };
 
