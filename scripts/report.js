@@ -3,6 +3,12 @@
 const routes = (fastify, options, done) => {
   const dbFunctions = require("./database.js");
 
+  // reusable validator for report types
+  function isValidType(type) {
+    const validTypes = ["vending_machine", "location", "app_functionality", "other"];
+    return validTypes.includes(type);
+  }
+
   // route for inserting a report object //
   fastify.post("/report", async (request, reply) => {
     // read data correctly from the body, not params
