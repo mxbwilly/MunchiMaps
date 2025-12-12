@@ -4,6 +4,10 @@ function clean(str) {
   return str.trim().replace(/\s+/g, " ");
 }
 
+function now() {
+  return new Date().toISOString();
+}
+
 // scripts/report.js
 //
 const routes = (fastify, options, done) => {
@@ -19,7 +23,7 @@ const routes = (fastify, options, done) => {
   fastify.post("/report", async (request, reply) => {
     // read data correctly from the body, not params
     let { building_id, title, description, type } = request.body || {};
-    
+
     // clean inputs
     title = clean(title);
     description = clean(description);
