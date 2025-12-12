@@ -266,4 +266,22 @@ const routes = (fastify, options, done) => {
     }
   });
 
+  fastify.delete("/reports/:id", async (request, reply) => {
+    const { id } = request.params;
+
+    try {
+      await dbFunctions.deleteReport(id);
+      reply.code(200).send({
+        success: true,
+        message: "Report deleted."
+      });
+    } catch (err) {
+      fastify.log.error(err);
+      reply.code(500).send({
+        success: false,
+        error: "Failed to delete report."
+      });
+    }
+  });
+
 module.exports = routes;
