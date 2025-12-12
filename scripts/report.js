@@ -1,3 +1,9 @@
+// sanitize simple text inputs
+function clean(str) {
+  if (!str || typeof str !== "string") return "";
+  return str.trim().replace(/\s+/g, " ");
+}
+
 // scripts/report.js
 //
 const routes = (fastify, options, done) => {
