@@ -18,7 +18,11 @@ const routes = (fastify, options, done) => {
   // route for inserting a report object //
   fastify.post("/report", async (request, reply) => {
     // read data correctly from the body, not params
-    const { building_id, title, description, type } = request.body || {};
+    let { building_id, title, description, type } = request.body || {};
+    
+    // clean inputs
+    title = clean(title);
+    description = clean(description);
 
     // validate input before DB call
     if (!title || !type || !description) {
