@@ -134,6 +134,15 @@ const routes = (fastify, options, done) => {
   }
 });
 
+// simple server health check
+fastify.get("/health", async (request, reply) => {
+  reply.code(200).send({
+    status: "ok",
+    server: "Fastify backend running",
+    timestamp: new Date().toISOString()
+  });
+});
+
   done();
 };
 
