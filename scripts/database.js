@@ -357,6 +357,20 @@ async function getRecentReports() {
   }
 }
 
+async function updateReportDescription(id, newDescription) {
+  const db = await connect();
+  try {
+    await db.run(
+      `UPDATE reports SET description = ? WHERE id = ?`,
+      [newDescription, id]
+    );
+    return true;
+  } catch (err) {
+    console.error("DB error in updateReportDescription:", err);
+    throw err;
+  }
+}
+
 module.exports = {
   initializeDatabase,
   populateWithStarterData,
@@ -370,6 +384,7 @@ module.exports = {
   getNumDrinkMachines,
   getReportCount,
   getRecentReports,
+  updateReportDescription,
   
   addReport: async (building_id, title, description) => {
     try{
