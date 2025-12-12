@@ -101,8 +101,7 @@ const routes = (fastify, options, done) => {
   fastify.get("/reports/type/:type", async (request, reply) => {
     const { type } = request.params;
 
-    const validTypes = ["vending_machine", "location", "app_functionality", "other"];
-    if (!validTypes.includes(type)) {
+    if (!isValidType(type)) {
       return reply.code(400).send({
         success: false,
         error: `Invalid report type. Valid types: ${validTypes.join(", ")}`
