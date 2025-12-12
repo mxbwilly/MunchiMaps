@@ -371,6 +371,17 @@ async function updateReportDescription(id, newDescription) {
   }
 }
 
+async function deleteReport(id) {
+  const db = await connect();
+  try {
+    await db.run(`DELETE FROM reports WHERE id = ?`, [id]);
+    return true;
+  } catch (err) {
+    console.error("DB error in deleteReport:", err);
+    throw err;
+  }
+}
+
 module.exports = {
   initializeDatabase,
   populateWithStarterData,
@@ -385,6 +396,7 @@ module.exports = {
   getReportCount,
   getRecentReports,
   updateReportDescription,
+  deleteReport,
   
   addReport: async (building_id, title, description) => {
     try{
