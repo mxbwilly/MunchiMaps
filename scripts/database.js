@@ -341,6 +341,22 @@ async function getReportCount() {
   return row.total;
 }
 
+async function getRecentReports() {
+  const db = await connect();
+  try {
+    const query = `
+      SELECT id, building_id, title, description, type, created_at
+      FROM reports
+      WHERE created_at >= datetime('now', '-1 day')
+      ORDER BY created_at DESC;
+    `;
+    return await db.all(query);
+  } catch (err) {
+    console.error("DB error in getRecentReports:", err);
+    throw err;
+  }
+}
+
 module.exports = {
   initializeDatabase,
   populateWithStarterData,
@@ -353,6 +369,7 @@ module.exports = {
   getNumSnackMachines,
   getNumDrinkMachines,
   getReportCount,
+  getRecentReports,
   
   addReport: async (building_id, title, description) => {
     try{
