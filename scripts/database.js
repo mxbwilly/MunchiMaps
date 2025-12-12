@@ -334,6 +334,13 @@ async function getReportsByType(type) {
   }
 }
 
+// return total number of reports in the DB
+async function getReportCount() {
+  const db = await connect();
+  const row = await db.get("SELECT COUNT(*) AS total FROM reports");
+  return row.total;
+}
+
 module.exports = {
   initializeDatabase,
   populateWithStarterData,
@@ -345,6 +352,7 @@ module.exports = {
   getY,
   getNumSnackMachines,
   getNumDrinkMachines,
+  getReportCount,
   
   addReport: async (building_id, title, description) => {
     try{
