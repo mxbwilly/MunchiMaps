@@ -1,3 +1,12 @@
+function validateReportPayload(payload) {
+  if (!payload) return false;
+  if (typeof payload.building_id !== "number") return false;
+  if (typeof payload.title !== "string" || payload.title.trim() === "") return false;
+  if (typeof payload.description !== "string") return false;
+  if (typeof payload.type !== "string" || payload.type.trim() === "") return false;
+  return true;
+}
+
 // sanitize simple text inputs
 function clean(str) {
   if (!str || typeof str !== "string") return "";
@@ -48,7 +57,7 @@ const routes = (fastify, options, done) => {
       const result = await dbFunctions.addReport(building_id, title, description, type);
 
       // Log the report to console with timestamp
-      const timestamp = new Date().toISOString();
+      const timestamp = now();
       fastify.log.info(`[REPORT CREATED] ${timestamp} | ${title} | ${description}`);
 
       // standardized response
