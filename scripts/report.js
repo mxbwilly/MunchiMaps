@@ -240,5 +240,30 @@ const routes = (fastify, options, done) => {
     }
   });
 
+  fastify.patch("/reports/:id/description", async (request, reply) => {
+    const { id } = request.params;
+    const { description } = request.body;
+
+    if (!description || description.length > 500) {
+      return reply.code(400).send({
+        success: false,
+        error: "Invalid description."
+      });
+    }
+
+    try {
+      await dbFunctions.updateReportDescription(id, description);
+      reply.code(200).send({
+        success: true,
+        message: "Description updated."
+      });
+    } catch (err) {
+      fastify.log.error(err);
+      reply.code(500).send({
+        success: false,
+        error: "Failed to update description."
+      });
+    }
+  });
 
 module.exports = routes;
