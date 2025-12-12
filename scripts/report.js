@@ -284,4 +284,31 @@ const routes = (fastify, options, done) => {
     }
   });
 
+  fastify.get("/reports/search", async (request, reply) => {
+  const { query } = request.query;
+
+  if (!query || query.trim().length < 2) {
+    return reply.code(400).send({
+      success: false,
+      error: "Query must be at least 2 characters."
+    });
+  }
+
+  try {
+    const results = await dbFunctions.searchReports(query);
+    reply.code(200).send({
+      success: true,
+      count: results.length,
+      data: results
+    });
+  } catch (err) {
+    fastify.log.error(err);
+    reply.code(500).send({
+      success: false,
+      error: "Failed to perform search."
+    });
+  }
+});
+
+
 module.exports = routes;
