@@ -121,6 +121,19 @@ const routes = (fastify, options, done) => {
     }
   });
 
+  fastify.get("/reports/count", async (request, reply) => {
+  try {
+    const total = await dbFunctions.getReportCount();
+    reply.code(200).send({
+      success: true,
+      total_reports: total
+    });
+  } catch (err) {
+    fastify.log.error(err);
+    reply.code(500).send({ success: false, error: "Failed to get report count." });
+  }
+});
+
   done();
 };
 
