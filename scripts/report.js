@@ -143,6 +143,14 @@ fastify.get("/health", async (request, reply) => {
   });
 });
 
+// return API version
+fastify.get("/version", async (request, reply) => {
+  reply.code(200).send({
+    api_version: "1.0.0",
+    description: "MunchiMaps backend API"
+  });
+});
+
   done();
 };
 
