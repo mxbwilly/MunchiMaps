@@ -184,25 +184,25 @@ const routes = (fastify, options, done) => {
   }
 });
 
-// simple server health check
-fastify.get("/health", async (request, reply) => {
-  reply.code(200).send({
-    status: "ok",
-    server: "Fastify backend running",
-    timestamp: new Date().toISOString()
+  // simple server health check
+  fastify.get("/health", async (request, reply) => {
+    reply.code(200).send({
+      status: "ok",
+      server: "Fastify backend running",
+      timestamp: new Date().toISOString()
+    });
   });
-});
 
-// return API version
-fastify.get("/version", async (request, reply) => {
-  reply.code(200).send({
-    api_version: "1.0.0",
-    description: "MunchiMaps backend API"
+  // return API version
+  fastify.get("/version", async (request, reply) => {
+    reply.code(200).send({
+      api_version: "1.0.0",
+      description: "MunchiMaps backend API"
+    });
   });
-});
 
-  done();
-};
+    done();
+  };
 
   // route for retrieving report statistics
   fastify.get("/reports/stats", async (request, reply) => {
@@ -221,5 +221,24 @@ fastify.get("/version", async (request, reply) => {
       });
     }
   });
+
+    // GET all reports from last 24 hours
+  fastify.get("/reports/recent", async (request, reply) => {
+    try {
+      const reports = await dbFunctions.getRecentReports();
+      reply.code(200).send({
+        success: true,
+        count: reports.length,
+        data: reports
+      });
+    } catch (err) {
+      fastify.log.error(err);
+      reply.code(500).send({
+        success: false,
+        error: "Failed to retrieve recent reports."
+      });
+    }
+  });
+
 
 module.exports = routes;
