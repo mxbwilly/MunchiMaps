@@ -382,6 +382,22 @@ async function deleteReport(id) {
   }
 }
 
+async function searchReports(keyword) {
+  const db = await connect();
+  try {
+    const query = `
+      SELECT id, building_id, title, description, type, created_at
+      FROM reports
+      WHERE title LIKE '%' || ? || '%'
+         OR description LIKE '%' || ? || '%'
+    `;
+    return await db.all(query, [keyword, keyword]);
+  } catch (err) {
+    console.error("DB error in searchReports:", err);
+    throw err;
+  }
+}
+
 module.exports = {
   initializeDatabase,
   populateWithStarterData,
@@ -397,6 +413,7 @@ module.exports = {
   getRecentReports,
   updateReportDescription,
   deleteReport,
+  searchReports,
   
   addReport: async (building_id, title, description) => {
     try{
