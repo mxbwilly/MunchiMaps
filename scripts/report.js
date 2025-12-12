@@ -45,6 +45,20 @@ const routes = (fastify, options, done) => {
       });
     }
 
+    if (request.body.title.length > 100) {
+      return reply.code(400).send({
+        success: false,
+        error: "Title exceeds 100 characters."
+      });
+    }
+
+    if (request.body.description.length > 500) {
+      return reply.code(400).send({
+        success: false,
+        error: "Description exceeds 500 characters."
+      });
+    }
+
     // validate input before DB call
     if (!title || !type || !description) {
       return reply.code(400).send({
