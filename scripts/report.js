@@ -37,6 +37,14 @@ const routes = (fastify, options, done) => {
     title = clean(title);
     description = clean(description);
 
+    // Extra building_id validation (must be integer)
+    if (isNaN(parseInt(request.body.building_id))) {
+      return reply.code(400).send({
+        success: false,
+        error: "building_id must be an integer."
+      });
+    }
+
     // validate input before DB call
     if (!title || !type || !description) {
       return reply.code(400).send({
