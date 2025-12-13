@@ -651,27 +651,43 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 // Handle report form submission
 document.addEventListener('DOMContentLoaded', function () {
-    initMap();
+  initMap();
 
-    const reportForm = document.getElementById('reportForm');
-    reportForm.addEventListener('submit', function(event) {
-        event.preventDefault();
-        const reportTitle = document.getElementById('reportTitle').value;
-        const reportDescription = document.getElementById('reportDescription').value;
+  const reportForm = document.getElementById('reportForm');
+  reportForm.addEventListener('submit', async function(event) {
+    event.preventDefault();
 
-        // Handle the form data (e.g., send it to a server or display it)
-        console.log('Report Title:', reportTitle);
-        console.log('Report Description:', reportDescription);
+    const reportTitle = document.getElementById('reportTitle').value;
+    const reportDescription = document.getElementById('reportDescription').value;
+    const reportType = document.getElementById('reportType').value; // dropdown value already matches backend
 
-        // Display a confirmation message or handle the submission
+    try {
+      const response = await fetch('http://127.0.0.1:5000/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          building_id: 1, // hardcode for now
+          title: reportTitle,
+          description: reportDescription,
+          type: reportType
+        })
+      });
+
+      const data = await response.json();
+      console.log('Server response:', data);
+
+      if (data.success) {
         alert('Report submitted successfully!');
-
-        // Close the popup
         closePopup('Report');
-
-        // Clear the form
         reportForm.reset();
-    });
+      } else {
+        alert('Error: ' + data.error);
+      }
+    } catch (err) {
+      console.error('Submission failed:', err);
+      alert('Failed to submit report.');
+    }
+  });
 });
 
 document.querySelector(".btn-fixx").onclick = function () {
