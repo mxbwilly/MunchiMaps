@@ -1,190 +1,197 @@
-function validateReportPayload(payload) {
-  if (!payload) return false;
-  if (typeof payload.building_id !== "number") return false;
-  if (typeof payload.title !== "string" || payload.title.trim() === "") return false;
-  if (typeof payload.description !== "string") return false;
-  if (typeof payload.type !== "string" || payload.type.trim() === "") return false;
-  return true;
-}
+// scripts/report.js
+// Fastify route registration for reports
 
-// sanitize simple text inputs
+const dbFunctions = require('./database.js');
+
+// small helpers (sanitize, validate, timestamp)
 function clean(str) {
-  if (!str || typeof str !== "string") return "";
-  return str.trim().replace(/\s+/g, " ");
+  if (!str || typeof str !== 'string') return '';
+  return str.trim().replace(/\s+/g, ' ');
 }
 
 function now() {
   return new Date().toISOString();
 }
 
-// scripts/report.js
-//
+function isValidType(type) {
+  const validTypes = ['vending_machine', 'location', 'app_functionality', 'other'];
+  return validTypes.includes(type);
+}
+
+function validateReportPayload(payload) {
+  if (!payload) return false;
+  const { building_id, title, description, type } = payload;
+  if (building_id === undefined || building_id === null) return false;
+  if (typeof title !== 'string' || title.trim() === '') return false;
+  if (typeof description !== 'string') return false;
+  if (typeof type !== 'string' || !isValidType(type)) return false;
+  return true;
+}
+
 const routes = (fastify, options, done) => {
-  const dbFunctions = require("./database.js");
 
-  // reusable validator for report types
-  function isValidType(type) {
-    const validTypes = ["vending_machine", "location", "app_functionality", "other"];
-    return validTypes.includes(type);
-  }
-
-  // route for inserting a report object //
-  fastify.post("/report", async (request, reply) => {
-    // read data correctly from the body, not params
+  // POST /report
+  fastify.post('/report', async (request, reply) => {
+    // destructure and sanitize input
     let { building_id, title, description, type } = request.body || {};
-
-    // clean inputs
     title = clean(title);
     description = clean(description);
 
-    // Extra building_id validation (must be integer)
-    if (isNaN(parseInt(request.body.building_id))) {
-      return reply.code(400).send({
-        success: false,
-        error: "building_id must be an integer."
-      });
+    // normalize building_id (may be string in JSON) -> integer
+    if (building_id !== undefined && building_id !== null) {
+      building_id = Number(building_id);
     }
 
-    if (request.body.title.length > 100) {
-      return reply.code(400).send({
-        success: false,
-        error: "Title exceeds 100 characters."
-      });
+    // validate payload after sanitization
+    if (!validateReportPayload({ building_id, title, description, type })) {
+      return reply.code(400).send({ success: false, error: 'Invalid report format.' });
     }
 
-    if (request.body.description.length > 500) {
-      return reply.code(400).send({
-        success: false,
-        error: "Description exceeds 500 characters."
-      });
+    // length limits
+    if (title.length > 100) {
+      return reply.code(400).send({ success: false, error: 'Title exceeds 100 characters.' });
     }
-
-    // validate input before DB call
-    if (!title || !type || !description) {
-      return reply.code(400).send({
-        success: false,
-        error: "Missing required fields: title, type, or description.",
-      });
-    }
-
-    const validTypes = ["vending_machine", "location", "app_functionality", "other"];
-    if (!validTypes.includes(type)) {
-      return reply.code(400).send({
-        success: false,
-        error: `Invalid type. Must be one of: ${validTypes.join(", ")}`,
-      });
+    if (description.length > 1000) {
+      return reply.code(400).send({ success: false, error: 'Description exceeds allowed length.' });
     }
 
     try {
       const result = await dbFunctions.addReport(building_id, title, description, type);
-
-      // Log the report to console with timestamp
       const timestamp = now();
       fastify.log.info(`[REPORT CREATED] ${timestamp} | ${title} | ${description}`);
 
-      // standardized response
-      reply.code(201).send({
+      return reply.code(201).send({
         success: true,
-        message: "Report successfully created and logged.",
+        message: 'Report successfully created and logged.',
         id: result?.id || null,
-        timestamp: timestamp
+        timestamp
       });
     } catch (err) {
-      // Add more detailed logging
-      fastify.log.error("Failed to insert report:", err);
-
-      reply.code(500).send({
-        success: false,
-        error: "Failed to insert new report object.",
-        details: err.message
-      });
+      fastify.log.error('Failed to insert report:', err);
+      return reply.code(500).send({ success: false, error: 'Failed to insert new report object.' });
     }
-
   });
 
-  // route for retrieving all reports
-  fastify.get("/reports", async (request, reply) => {
+  // GET /reports (paginated optional)
+  fastify.get('/reports', async (request, reply) => {
     try {
       const reports = await dbFunctions.getAllReports();
-      reply.code(200).send({
-        success: true,
-        count: reports.length,
-        data: reports,
-      });
+      return reply.code(200).send({ success: true, count: reports.length, data: reports });
     } catch (err) {
       fastify.log.error(err);
-      reply.code(500).send({
-        success: false,
-        error: "Failed to retrieve reports from the database.",
-      });
+      return reply.code(500).send({ success: false, error: 'Failed to retrieve reports from the database.' });
     }
   });
 
-  // route for retrieving reports for a specific building
-  fastify.get("/reports/building/:building_id", async (request, reply) => {
-    const { building_id } = request.params;
-
+  // GET /reports/building/:building_id
+  fastify.get('/reports/building/:building_id', async (request, reply) => {
+    const building_id = Number(request.params.building_id);
+    if (Number.isNaN(building_id)) {
+      return reply.code(400).send({ success: false, error: 'Invalid building_id.' });
+    }
     try {
       const reports = await dbFunctions.getReportsByBuilding(building_id);
-
-      reply.code(200).send({
-        success: true,
-        building_id: building_id,
-        count: reports.length,
-        data: reports
-      });
+      return reply.code(200).send({ success: true, building_id, count: reports.length, data: reports });
     } catch (err) {
       fastify.log.error(err);
-      reply.code(500).send({
-        success: false,
-        error: "Failed to retrieve reports for this building."
-      });
+      return reply.code(500).send({ success: false, error: 'Failed to retrieve reports for this building.' });
     }
   });
 
-  // route for retrieving reports filtered by type
-  fastify.get("/reports/type/:type", async (request, reply) => {
-    const { type } = request.params;
-
+  // GET /reports/type/:type
+  fastify.get('/reports/type/:type', async (request, reply) => {
+    const type = request.params.type;
     if (!isValidType(type)) {
-      return reply.code(400).send({
-        success: false,
-        error: `Invalid report type. Valid types: ${validTypes.join(", ")}`
-      });
+      return reply.code(400).send({ success: false, error: `Invalid report type. Valid types: vending_machine, location, app_functionality, other` });
     }
-
     try {
       const reports = await dbFunctions.getReportsByType(type);
-
-      reply.code(200).send({
-        success: true,
-        count: reports.length,
-        type: type,
-        data: reports
-      });
+      return reply.code(200).send({ success: true, count: reports.length, type, data: reports });
     } catch (err) {
       fastify.log.error(err);
-      reply.code(500).send({
-        success: false,
-        error: "Failed to retrieve filtered reports from the database."
-      });
+      return reply.code(500).send({ success: false, error: 'Failed to retrieve filtered reports from the database.' });
     }
   });
 
-  fastify.get("/reports/count", async (request, reply) => {
-  try {
-    const total = await dbFunctions.getReportCount();
-    reply.code(200).send({
-      success: true,
-      total_reports: total
-    });
-  } catch (err) {
-    fastify.log.error(err);
-    reply.code(500).send({ success: false, error: "Failed to get report count." });
-  }
-});
+  // GET /reports/count
+  fastify.get('/reports/count', async (request, reply) => {
+    try {
+      const total = await dbFunctions.getReportCount();
+      return reply.code(200).send({ success: true, total_reports: total });
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ success: false, error: 'Failed to get report count.' });
+    }
+  });
 
-  // simple server health check
+  // GET /reports/stats
+  fastify.get('/reports/stats', async (request, reply) => {
+    try {
+      const stats = await dbFunctions.getReportStats();
+      return reply.code(200).send({ success: true, total_reports: stats.total, by_type: stats.byType });
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ success: false, error: 'Failed to retrieve report statistics.' });
+    }
+  });
+
+  // GET /reports/recent
+  fastify.get('/reports/recent', async (request, reply) => {
+    try {
+      const reports = await dbFunctions.getRecentReports();
+      return reply.code(200).send({ success: true, count: reports.length, data: reports });
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ success: false, error: 'Failed to retrieve recent reports.' });
+    }
+  });
+
+  // PATCH /reports/:id/description
+  fastify.patch('/reports/:id/description', async (request, reply) => {
+    const id = Number(request.params.id);
+    const { description } = request.body || {};
+    if (!description || description.length > 1000) {
+      return reply.code(400).send({ success: false, error: 'Invalid description.' });
+    }
+    try {
+      const ok = await dbFunctions.updateReportDescription(id, description);
+      if (!ok) return reply.code(404).send({ success: false, error: 'Report not found.' });
+      return reply.code(200).send({ success: true, message: 'Description updated.' });
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ success: false, error: 'Failed to update description.' });
+    }
+  });
+
+  // DELETE /reports/:id
+  fastify.delete('/reports/:id', async (request, reply) => {
+    const id = Number(request.params.id);
+    try {
+      const ok = await dbFunctions.deleteReport(id);
+      if (!ok) return reply.code(404).send({ success: false, error: 'Report not found.' });
+      return reply.code(200).send({ success: true, message: 'Report deleted.' });
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ success: false, error: 'Failed to delete report.' });
+    }
+  });
+
+  // GET /reports/search?query=...
+  fastify.get('/reports/search', async (request, reply) => {
+    const { query } = request.query || {};
+    if (!query || typeof query !== 'string' || query.trim().length < 2) {
+      return reply.code(400).send({ success: false, error: 'Query must be at least 2 characters.' });
+    }
+    try {
+      const results = await dbFunctions.searchReports(query.trim());
+      return reply.code(200).send({ success: true, count: results.length, data: results });
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ success: false, error: 'Failed to perform search.' });
+    }
+  });
+
+  // Health check
   fastify.get("/health", async (request, reply) => {
     reply.code(200).send({
       status: "ok",
@@ -193,7 +200,7 @@ const routes = (fastify, options, done) => {
     });
   });
 
-  // return API version
+  // API version
   fastify.get("/version", async (request, reply) => {
     reply.code(200).send({
       api_version: "1.0.0",
@@ -201,114 +208,7 @@ const routes = (fastify, options, done) => {
     });
   });
 
-    done();
-  };
-
-  // route for retrieving report statistics
-  fastify.get("/reports/stats", async (request, reply) => {
-    try {
-      const stats = await dbFunctions.getReportStats();
-      reply.code(200).send({
-        success: true,
-        total_reports: stats.total,
-        by_type: stats.byType
-      });
-    } catch (err) {
-      fastify.log.error(err);
-      reply.code(500).send({
-        success: false,
-        error: "Failed to retrieve report statistics."
-      });
-    }
-  });
-
-    // GET all reports from last 24 hours
-  fastify.get("/reports/recent", async (request, reply) => {
-    try {
-      const reports = await dbFunctions.getRecentReports();
-      reply.code(200).send({
-        success: true,
-        count: reports.length,
-        data: reports
-      });
-    } catch (err) {
-      fastify.log.error(err);
-      reply.code(500).send({
-        success: false,
-        error: "Failed to retrieve recent reports."
-      });
-    }
-  });
-
-  fastify.patch("/reports/:id/description", async (request, reply) => {
-    const { id } = request.params;
-    const { description } = request.body;
-
-    if (!description || description.length > 500) {
-      return reply.code(400).send({
-        success: false,
-        error: "Invalid description."
-      });
-    }
-
-    try {
-      await dbFunctions.updateReportDescription(id, description);
-      reply.code(200).send({
-        success: true,
-        message: "Description updated."
-      });
-    } catch (err) {
-      fastify.log.error(err);
-      reply.code(500).send({
-        success: false,
-        error: "Failed to update description."
-      });
-    }
-  });
-
-  fastify.delete("/reports/:id", async (request, reply) => {
-    const { id } = request.params;
-
-    try {
-      await dbFunctions.deleteReport(id);
-      reply.code(200).send({
-        success: true,
-        message: "Report deleted."
-      });
-    } catch (err) {
-      fastify.log.error(err);
-      reply.code(500).send({
-        success: false,
-        error: "Failed to delete report."
-      });
-    }
-  });
-
-  fastify.get("/reports/search", async (request, reply) => {
-  const { query } = request.query;
-
-  if (!query || query.trim().length < 2) {
-    return reply.code(400).send({
-      success: false,
-      error: "Query must be at least 2 characters."
-    });
-  }
-
-  try {
-    const results = await dbFunctions.searchReports(query);
-    reply.code(200).send({
-      success: true,
-      count: results.length,
-      data: results
-    });
-  } catch (err) {
-    fastify.log.error(err);
-    reply.code(500).send({
-      success: false,
-      error: "Failed to perform search."
-    });
-  }
-});
-
+  done();
+};
 
 module.exports = routes;
