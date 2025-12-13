@@ -97,7 +97,6 @@ html, body {
 }
 
 .help-button{
-
   position: absolute;
   top: 5px;
   right: 5px;
@@ -109,7 +108,6 @@ html, body {
   
   }
 
-
 .help-button:hover {
     
   transform: scale(1.1); /* Increase the size of the button */
@@ -117,6 +115,7 @@ html, body {
 .help-button:active {
   transform: translateY(2px); /* Slightly move the button down */
 }
+
 .help-button-img {
     height: 30px; /* Adjust the height of the image */
     width: auto; /* Maintain the aspect ratio */
@@ -155,8 +154,6 @@ html, body {
   max-width: 600px; 
   font-family: 'Courier New'; 
   border-radius: 20px;
-
-
 }
 
 .close {
@@ -275,8 +272,6 @@ html, body {
   text-decoration: none;
   cursor: pointer;
 }
-
-
 
   /* For popups from buttons at bottom of screen */
   .popup-container {
@@ -480,30 +475,41 @@ html, body {
     border: 1px solid #ddd;
     border-radius: 5px;
   }
-  
+
   .rating{
     display:flex;
     justify-content: flex-start;
-    /*flex-direction:row-reverse;*/
     margin-left: -10px;
-  }
-  .rating span {
-    cursor: pointer;
-    transition: color .3s, transform .3s;
-    font-size:30px;
-  }
-  .rating span img{
-    filter: brightness(40%);
-    transition: fitler .3s;
-  }
-  .rating span:hover{
-    filter: brightness(200%);
-    transform: scale(1.5);
-  }
-  .rating span:hover~span{
-    filter: brightness(200%);
+    flex-direction: row-reverse;
   }
   
+  .rating-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .rating span {
+    cursor: pointer; /* Change cursor to pointer on hover */
+    transition: color .3s, transform .3s;
+  }
+  .rating span img {
+    filter: brightness(40%); /* Dimmed stars by default */
+    transition: filter .3s;
+  }
+  .rating span:hover {
+    filter: brightness(200%);
+    transform: scale(1.2);
+  }
+  .rating span:hover~span {
+    filter: brightness(200%);
+  }
+  .rating span.selected { /* Highlight selected stars */
+    filter: brightness(200%);
+  }
+
   .submit-review button {
     align-self: flex-start;
     padding: 5px 10px;
@@ -512,13 +518,13 @@ html, body {
     color: white;
     border-radius: 5px;
     cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
   }
   
   .submit-review button:hover {
     background-color: #0056b3;
   }
-
-
 
 #popup-search {
     position: fixed;
@@ -582,6 +588,8 @@ html, body {
     height: 500px; 
     font-family: 'Courier New'; 
     font-weight: bold;
+    border-radius: 16px;
+
 }
 
 /* Small screens (e.g., mobile) */
@@ -674,7 +682,8 @@ html, body {
 }
 
 /*report button*/
-.popup-container {
+.popup-report-container {
+  font-family: 'Courier New', Courier, monospace;
   display: none;
   position: fixed;
   top: 0;
@@ -683,6 +692,8 @@ html, body {
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
   z-index: 1000;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5); /* Window drop shadow */
+  animation: fadeIn 0.5s ease forwards; /* Fade in animation */
 }
 
 .popup {
@@ -709,6 +720,9 @@ html, body {
 .popup-close {
   font-size: 24px;
   cursor: pointer;
+  position: absolute;
+  top: 10px;
+  left: 10px;
 }
 
 .popup-form .form-group {
@@ -723,7 +737,7 @@ html, body {
 
 /* Styles for the dropdown menu in the report form */
 .popup-form select.form-control {
-  width: 100%;
+  width: 50%;
   padding: 8px;
   box-sizing: border-box;
   border: 1px solid #ccc;
@@ -733,7 +747,6 @@ html, body {
   font-size: 16px;
   margin-bottom: 15px;
   transition: border-color 0.3s ease;
-  font-weight: bold;
 }
 
 .popup-form select.form-control:focus {
@@ -749,6 +762,7 @@ html, body {
   border-radius: 5px;
   padding: 10px 20px;
   cursor: pointer;
+  font-family: 'Courier New', Courier, monospace;
   transition: background-color 0.3s ease;
 }
 
@@ -769,6 +783,14 @@ html, body {
   outline: none;
 }
 
+.popup-form input[type="text"] {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.form-group .form-control {
+  font-family:'Courier New', Courier, monospace
+}
+
 .leaflet-bottom .leaflet-control {
   margin-bottom: 10px;
 }
@@ -779,7 +801,113 @@ html, body {
     margin-bottom: 16px;
   }
 }
- 
-  
 
-   
+
+/* === POPUP LAYER FIXES === */
+.help-popup,
+.map-key-popup,
+.popup-report-container
+/* #popup-search */ {
+  position: fixed;
+  inset: 0;                 /* top/right/bottom/left: 0 */
+  display: none;            /* shown via JS */
+  z-index: 5000;            /* above logo & Leaflet controls */
+  background: rgba(0,0,0,.4);
+  /* perfect centering for the child panel */
+  display: none;            /* default */
+}
+
+.help-popup.show,
+.map-key-popup.show,
+.popup-report-container.show
+/* #popup-search.show */{
+  display: grid;            /* turn on and center */
+  place-items: center;
+}
+
+/* Center the inner cards and prevent margin-based drifting */
+.help-content,
+.map-key-content,
+.popup           /* the Report modal uses .popup as the card */
+ /*.search-bar*/  {      /* search modal's inner card */
+  margin: 0;                  /* override existing 15% auto margins */
+  width: min(92vw, 600px);
+  max-height: 85vh;
+  overflow: auto;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.5);
+}
+
+
+/* Search modal: remove its extra fixed centering so the overlay does it 
+.search-bar {
+  position: static !important;
+  transform: none !important;
+  height: auto;              /* let content drive size 
+}
+*/
+
+/* Keep the logo from blocking clicks and layer it lower than modals */
+.logo-title {
+  z-index: 100 !important;   /* below 5000 */
+  pointer-events: none;      /* don't steal clicks from modals */
+}
+
+/* Cookie stars within existing reviews */
+.review-rating img {
+  filter: brightness(80%);
+}
+
+/* review header: author + cookie icons inline */
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* space between name and cookies */
+}
+
+.review-author {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+}
+.review-rating img {
+  width: 20px;
+  height: 20px;
+  margin: 0 2px 0 0;
+  filter: brightness(.8);
+}
+
+.review-edit-btn {
+  background: none;
+  border: none;
+  color: #5cb85c;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0;
+  margin-left: auto;
+  margin-right: 2px;
+  line-height: 1;
+  transition: color 0.2s ease;
+  transform: scaleX(-1);
+}
+
+.review-edit-btn:hover {
+  color: #449d44;
+  transform: scaleX(-1) scale(1.2);
+}
+
+.review-delete-btn {
+  background: none;
+  border: none;
+  color: #d9534f;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.review-delete-btn:hover {
+  color: #c9302c;
+  transform: scale(1.2);
+}
